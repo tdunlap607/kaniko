@@ -10,6 +10,9 @@ or Kubernetes cluster.
 > repository, which was archived in June of 2025. Further details in
 > [History and Status](#history-and-status).
 
+Interested in a CVE-free container image of this project? [Contact Chainguard](https://www.chainguard.dev/contact). 
+
+
 ## History and Status
 
 kaniko was originally created by [Priya Wadhwa
