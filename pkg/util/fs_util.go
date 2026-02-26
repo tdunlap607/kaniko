@@ -193,17 +193,19 @@ func GetFSFromLayers(root string, layers []v1.Layer, opts ...FSOpt) ([]string, e
 			if cleanedName == ".." || strings.HasPrefix(cleanedName, "../") {
 				return nil, fmt.Errorf("tar entry %q is not allowed: references parent directory", hdr.Name)
 			}
-			// SecureJoin resolves symlinks and ensures the result stays within root,
-			// which is needed because the whiteout code path calls os.RemoveAll.
-			path, err := securejoin.SecureJoin(root, cleanedName)
-			if err != nil {
-				return nil, fmt.Errorf("resolving path for %q: %w", hdr.Name, err)
-			}
+			path := filepath.Join(root, cleanedName)
 			base := filepath.Base(path)
-			dir := filepath.Dir(path)
 
 			if strings.HasPrefix(base, archive.WhiteoutPrefix) {
-				logrus.Tracef("Whiting out %s", path)
+				// SecureJoin resolves symlinks and ensures the result stays
+				// within root, which is needed because this code path calls
+				// os.RemoveAll.
+				securePath, err := securejoin.SecureJoin(root, cleanedName)
+				if err != nil {
+					return nil, fmt.Errorf("resolving whiteout path for %q: %w", hdr.Name, err)
+				}
+				dir := filepath.Dir(securePath)
+				logrus.Tracef("Whiting out %s", securePath)
 
 				name := strings.TrimPrefix(base, archive.WhiteoutPrefix)
 				path := filepath.Join(dir, name)
