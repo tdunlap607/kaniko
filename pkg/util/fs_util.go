@@ -317,7 +317,13 @@ func ExtractFile(dest string, hdr *tar.Header, cleanedName string, tr io.Reader)
 
 	path, err := securejoin.SecureJoin(dest, cleanedName)
 	if err != nil {
-		return fmt.Errorf("resolving path for %q: %w", hdr.Name, err)
+		// During layer extraction, symlink chains may be incomplete,
+		// causing ELOOP. Fall back to the lexical path — the OS will
+		// encounter the same resolution failure if the path is used.
+		if !errors.Is(err, syscall.ELOOP) {
+			return fmt.Errorf("resolving path for %q: %w", hdr.Name, err)
+		}
+		path = filepath.Join(dest, cleanedName)
 	}
 	base := filepath.Base(path)
 	dir := filepath.Dir(path)
